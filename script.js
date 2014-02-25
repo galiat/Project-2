@@ -31,43 +31,18 @@ var hashtagColors = {
 	"defense": "rgb(30,120,180)",
 };
 
-////////////////////////////////////////////////////////////////////////////////
-// Handling the hashtagPlot and scrubBar
-
-// Run hashtagMousemove every time the mouse moves above the hashtagPlot
-hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
-function hashtagMousemove(e) {
-	console.log(e.clientX);
-	updateScrubBar(e.clientX);
-	updateVideo();
-	updateTranscript();
-}
-
-hashtagPlot.addEventListener('mouseout', playVideo, false);
-function playVideo(e) {
-	scrubBar.style.visibility = "hidden";
-	SOTUvideo.play();
-}
-
+	// Hardcoded by looking at the plot--
+	var dominantHashtags = [
+		[1266, 'energy'],
+		[1615, 'jobs'],
+		[1861, 'education'],
+		[2124, 'fairness'],
+		[2681, 'healthcare'],
+		[3592, 'defense']
+	];
 
 ////////////////////////////////////////////////////////////////////////////////
-// Adding the nav functionality for the video
-
-var hashtagNav = document.getElementsByTagName('li');
-for (var i = 0; i < hashtagNav.length; i++) {
-	hashtagNav[i].addEventListener('click', navClick, false);
-}
-function navClick(e) {
-	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
-	scrubBar.fractionScrubbed = (timestamp-videoOffset)/SOTUvideo.duration;
-	updateVideo();
-	updateTranscript();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Adding the map coloring functionality
-
+// initialize window
 window.onload = function () {
 	// We have to make sure that we have the nation and the states
 	// But because of the size and loading time of the SVG, we have to attach it to an event handler for window.onload to make sure it's fully loaded
@@ -81,73 +56,132 @@ window.onload = function () {
 			stateAbbreviations.push(statePaths[i].id);
 		}
 	}
-
-	recolorNation(dominantHashtagAt(SOTUvideo.currentTime)); // This is where the action happens: recolor the states for the current time of the video.
+	updateMap(dominantHashtagAt(SOTUvideo.currentTime)); // This is where the action happens: recolor the states for the current time of the video.
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// Add listeners
+
+// Run hashtagMousemove every time the mouse moves above the hashtagPlot
+hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
+function hashtagMousemove(e) {
+	updateScrubBar(e.clientX);
+	updateVideo();
+	updateTranscript();
+}
+
+hashtagPlot.addEventListener('mouseout', playVideo, false);
+function playVideo(e) {
+	//scrubBar.style.visibility = "hidden";
+	SOTUvideo.play();
+}
+
+// Adding the nav functionality for the video
+var hashtagNav = document.getElementsByTagName('li');
+for (var i = 0; i < hashtagNav.length; i++) {
+	hashtagNav[i].addEventListener('click', navClick, false);
+}
+function navClick(e) {
+	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
+	scrubBar.fractionScrubbed = (timestamp-videoOffset)/SOTUvideo.duration;
+	updateVideo();
+	updateTranscript();
+}
 
 // Set up the video so that the chart is updated and the nation recolored every time the time changes
 document.getElementById('sotu-video').addEventListener("timeupdate", updatePage);
 
-
 ////////////////////////////////////////////////////////////////////////////////
+// Update screen functions
 
+// A function to make the scrubBar follow the mouse
+// Sets scrubBar.fractionScrubbed global
 function updateScrubBar(mouse_position) {
-	// A function to make the scrubBar follow the mouse
-
 	scrubBar.style.visibility = 'visible';
 	scrubBar.style.left = mouse_position - position(hashtagPlot).x; // e.clientX is the mouse position
-
 	scrubBar.fractionScrubbed = parseInt(scrubBar.style.left, 10)/hashtagPlot.offsetWidth;
 }
 
+// Uses scrubBar.fractionScrubbed global
+// Sets SOTUvideo.currentTime
 function updateVideo() {
 	SOTUvideo.currentTime = SOTUvideo.duration * scrubBar.fractionScrubbed;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Handling the scrolling transcript
 
+// Handling the scrolling transcript
+// Uses scrubBar.fractionScrubbed global
 function updateTranscript() {
 	scrollToTimestamp(nearestStamp(scrubBar.fractionScrubbed));
 }
 
-function scrollToTimestamp(timestamp) {
-	var target = transcript.querySelector('#transcript-time-' + timestamp);
-	document.getElementById('sotu-transcript').scrollTop = target.offsetTop;
-}
-
-function nearestStamp(fractionScrubbed) {
-	// Figure out what the closest timestamp we have is to the current amount of scrubbing
-	var timestampEquivalent = fractionScrubbed * SOTUvideo.duration + videoOffset; // IF we had a timestamp, what would it be?
-	for (var i = 0; i < timestamps.length - 1; i++) {
-		if ( timestamps[i+1] > timestampEquivalent ) { // Find teh first timestamp our guess is greater than
-			return timestamps[i];
-		}
-	}
-	return timestamps[timestamps.length - 1];
-}
-
-
+// Uses SOTUvideo.currentTime global
 function updatePage() {
 	var dominantHashtag = dominantHashtagAt(SOTUvideo.currentTime);
-	recolorNation(dominantHashtag);
+	updateMap(dominantHashtag);
 	updateChart();
 }
 
+
+// Uses SOTUvideo.currentTime global
+function updateMap(hashtag) {
+	// A function to go through every state and color it correctly for a given hashtag
+	for ( var k = 0; k < stateAbbreviations.length; k++ ) {
+		var stateAbbreviation = stateAbbreviations[k];
+		var state = nation.getElementById(stateAbbreviation);
+		colorState(state, getIntervalAt(SOTUvideo.currentTime), hashtag);
+	}
+}
+
+
+// Uses SOTUvideo.currentTime global
+function updateChart() {
+	// Now that we have all the needed data, actually redraw the chart
+
+	var currentInterval = getIntervalAt(SOTUvideo.currentTime);
+	var numbers = document.querySelectorAll('#hashtag-chart li div.bar'); // Get all the bar chart divs
+
+	var rawTotals = {};
+	for (var i = 0; i < numbers.length; i++) {
+		// Total engagement for a given hashtag across the nation
+		rawTotals[numbers[i].id] = getTotalEngagement(currentInterval, numbers[i].id);
+	}
+
+	// Figure out the range of engagement
+	var maxEngagement = 0;
+	var totalEngagement = 0;
+	for ( var eachHashtag in rawTotals ) {
+		maxEngagement = Math.max(maxEngagement, rawTotals[eachHashtag]);
+		totalEngagement += rawTotals[eachHashtag];
+	}
+
+	// For each hashtag, calculate how to scale the bars so that the largest is '1'
+	for (var hashtag in rawTotals) {
+		var newWidth = interpolate(rawTotals[hashtag], [0, maxEngagement], [0,1])*65 + '%';
+		var bar = document.querySelector('li div#' + hashtag);
+		bar.style.width = newWidth;
+
+		// Color the dominant hashtag, make the rest gray
+		var sibling = null; // Holds the text next to each bar
+		if (hashtag == dominantHashtagAt(SOTUvideo.currentTime)) {
+			bar.style.backgroundColor = hashtagColors[hashtag];
+			sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
+			sibling.style.color = hashtagColors[hashtag];
+		}
+		else {
+			sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
+			sibling.style.color = '#d3d3d3';
+			bar.style.backgroundColor = '#d3d3d3';
+		}
+
+	}
+}
+
+//////////////////////////////////////////
+// Other stuff
+
 function dominantHashtagAt(time) {
 	// A function to figure out the dominant hashtag at a given time
-
-	// Hardcoded by looking at the plot--
-	var dominantHashtags = [
-		[1266, 'energy'],
-		[1615, 'jobs'],
-		[1861, 'education'],
-		[2124, 'fairness'],
-		[2681, 'healthcare'],
-		[3592, 'defense']
-	];
-
 
 	// Go backwards through the hashtags looking for the first which predates the time we're looking for
 	var dominantHashtag = null;
@@ -166,14 +200,7 @@ function dominantHashtagAt(time) {
 }
 
 
-function recolorNation(hashtag) {
-	// A function to go through every state and color it correctly for a given hashtag
-	for ( var k = 0; k < stateAbbreviations.length; k++ ) {
-		var stateAbbreviation = stateAbbreviations[k];
-		var state = nation.getElementById(stateAbbreviation);
-		colorState(state, getIntervalAt(SOTUvideo.currentTime), hashtag);
-	}
-}
+
 
 function getIntervalAt(seconds) {
 	// A function to get the nearest Interval we have from twitter for a given time
@@ -239,47 +266,7 @@ function engagementRange(interval, hashtag) {
 	return range;
 }
 
-function updateChart() {
-	// Now that we have all the needed data, actually redraw the chart
 
-	var currentInterval = getIntervalAt(SOTUvideo.currentTime);
-	var numbers = document.querySelectorAll('#hashtag-chart li div.bar'); // Get all the bar chart divs
-
-	var rawTotals = {};
-	for (var i = 0; i < numbers.length; i++) {
-		// Total engagement for a given hashtag across the nation
-		rawTotals[numbers[i].id] = getTotalEngagement(currentInterval, numbers[i].id);
-	}
-
-	// Figure out the range of engagement
-	var maxEngagement = 0;
-	var totalEngagement = 0;
-	for ( var eachHashtag in rawTotals ) {
-		maxEngagement = Math.max(maxEngagement, rawTotals[eachHashtag]);
-		totalEngagement += rawTotals[eachHashtag];
-	}
-
-	// For each hashtag, calculate how to scale the bars so that the largest is '1'
-	for (var hashtag in rawTotals) {
-		var newWidth = interpolate(rawTotals[hashtag], [0, maxEngagement], [0,1])*65 + '%';
-		var bar = document.querySelector('li div#' + hashtag);
-		bar.style.width = newWidth;
-
-		// Color the dominant hashtag, make the rest gray
-		var sibling = null; // Holds the text next to each bar
-		if (hashtag == dominantHashtagAt(SOTUvideo.currentTime)) {
-			bar.style.backgroundColor = hashtagColors[hashtag];
-			sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
-			sibling.style.color = hashtagColors[hashtag];
-		}
-		else {
-			sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
-			sibling.style.color = '#d3d3d3';
-			bar.style.backgroundColor = '#d3d3d3';
-		}
-
-	}
-}
 
 
 function getTotalEngagement(interval, hashtag) {
@@ -295,6 +282,25 @@ function getTotalEngagement(interval, hashtag) {
 	}
 
 	return sum;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Transcript Helper Functions
+
+function scrollToTimestamp(timestamp) {
+	var target = transcript.querySelector('#transcript-time-' + timestamp);
+	document.getElementById('sotu-transcript').scrollTop = target.offsetTop;
+}
+
+function nearestStamp(fractionScrubbed) {
+	// Figure out what the closest timestamp we have is to the current amount of scrubbing
+	var timestampEquivalent = fractionScrubbed * SOTUvideo.duration + videoOffset; // IF we had a timestamp, what would it be?
+	for (var i = 0; i < timestamps.length - 1; i++) {
+		if ( timestamps[i+1] > timestampEquivalent ) { // Find teh first timestamp our guess is greater than
+			return timestamps[i];
+		}
+	}
+	return timestamps[timestamps.length - 1];
 }
 
 
