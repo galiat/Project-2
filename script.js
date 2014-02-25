@@ -37,9 +37,10 @@ var hashtagColors = {
 // Run hashtagMousemove every time the mouse moves above the hashtagPlot
 hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
 function hashtagMousemove(e) {
-	updateScrubBar(e);
-	updateVideo(e);
-	updateTranscript(e);
+	console.log(e.clientX);
+	updateScrubBar(e.clientX);
+	updateVideo();
+	updateTranscript();
 }
 
 hashtagPlot.addEventListener('mouseout', playVideo, false);
@@ -48,23 +49,66 @@ function playVideo(e) {
 	SOTUvideo.play();
 }
 
-function updateScrubBar(e) {
+
+////////////////////////////////////////////////////////////////////////////////
+// Adding the nav functionality for the video
+
+var hashtagNav = document.getElementsByTagName('li');
+for (var i = 0; i < hashtagNav.length; i++) {
+	hashtagNav[i].addEventListener('click', navClick, false);
+}
+function navClick(e) {
+	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
+	scrubBar.fractionScrubbed = (timestamp-videoOffset)/SOTUvideo.duration;
+	updateVideo();
+	updateTranscript();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Adding the map coloring functionality
+
+window.onload = function () {
+	// We have to make sure that we have the nation and the states
+	// But because of the size and loading time of the SVG, we have to attach it to an event handler for window.onload to make sure it's fully loaded
+	nation = document.getElementsByTagName('object')[0].contentDocument.getElementsByTagName('svg')[0];
+	statePaths = nation.querySelectorAll('.state');
+
+	// Go through and get all the state abbreviations used
+	stateAbbreviations = [];
+	for (var i = 0; i < statePaths.length; i++ ) {
+		if (statePaths[i].id.length == 2) {
+			stateAbbreviations.push(statePaths[i].id);
+		}
+	}
+
+	recolorNation(dominantHashtagAt(SOTUvideo.currentTime)); // This is where the action happens: recolor the states for the current time of the video.
+};
+
+
+// Set up the video so that the chart is updated and the nation recolored every time the time changes
+document.getElementById('sotu-video').addEventListener("timeupdate", updatePage);
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+function updateScrubBar(mouse_position) {
 	// A function to make the scrubBar follow the mouse
 
 	scrubBar.style.visibility = 'visible';
-	scrubBar.style.left = e.clientX - position(hashtagPlot).x; // e.clientX is the mouse position
+	scrubBar.style.left = mouse_position - position(hashtagPlot).x; // e.clientX is the mouse position
 
 	scrubBar.fractionScrubbed = parseInt(scrubBar.style.left, 10)/hashtagPlot.offsetWidth;
 }
 
-function updateVideo(e) {
+function updateVideo() {
 	SOTUvideo.currentTime = SOTUvideo.duration * scrubBar.fractionScrubbed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Handling the scrolling transcript
 
-function updateTranscript(e) {
+function updateTranscript() {
 	scrollToTimestamp(nearestStamp(scrubBar.fractionScrubbed));
 }
 
@@ -85,44 +129,6 @@ function nearestStamp(fractionScrubbed) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-// Adding the nav functionality for the video
-
-var hashtagNav = document.getElementsByTagName('li');
-for (var i = 0; i < hashtagNav.length; i++) {
-	hashtagNav[i].addEventListener('click', navClick, false);
-}
-
-function navClick(e) {
-	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
-	scrubBar.fractionScrubbed = (timestamp-videoOffset)/SOTUvideo.duration;
-	updateVideo(e);
-	updateTranscript(e);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Adding the map coloring functionality
-
-window.onload = function () {
-	// We have to make sure that we have the nation and the states 
-	// But because of the size and loading time of the SVG, we have to attach it to an event handler for window.onload to make sure it's fully loaded 
-	nation = document.getElementsByTagName('object')[0].contentDocument.getElementsByTagName('svg')[0];
-	statePaths = nation.querySelectorAll('.state');
-	
-	// Go through and get all the state abbreviations used
-	stateAbbreviations = [];
-	for (var i = 0; i < statePaths.length; i++ ) {
-		if (statePaths[i].id.length == 2) {
-			stateAbbreviations.push(statePaths[i].id);
-		}
-	}
-
-	recolorNation(dominantHashtagAt(SOTUvideo.currentTime)); // This is where the action happens: recolor the states for the current time of the video.
-};
-
-// Set up the video so that the chart is updated and the nation recolored every time the time changes
-document.getElementById('sotu-video').addEventListener("timeupdate", updatePage);
 function updatePage() {
 	var dominantHashtag = dominantHashtagAt(SOTUvideo.currentTime);
 	recolorNation(dominantHashtag);
@@ -308,7 +314,7 @@ function interpolate(value, from, to) {
 	// A function that lets us scale a value from one scale to another-- e.g. 5 : [0, 10] to 0.5 for [0, 1]
 	var fromSpread = from[1] - from[0];
 	var toSpread = to[1] - to[0];
-	
+
 	var ratio = toSpread/fromSpread;
 
 	return (value - from[0])*ratio + to[0];
