@@ -65,7 +65,7 @@ window.onload = function () {
 // Run hashtagMousemove every time the mouse moves above the hashtagPlot
 hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
 function hashtagMousemove(e) {
-	updateScrubBar(e.clientX);
+	updateScrubBar(e.clientX);// e.clientX is the mouse position
 	updateVideo();
 	updateTranscript();
 }
@@ -91,14 +91,21 @@ function navClick(e) {
 // Set up the video so that the chart is updated and the nation recolored every time the time changes
 document.getElementById('sotu-video').addEventListener("timeupdate", updatePage);
 
+//////////////////////////////////////////////////////////////////////////////////////
+// Converstions
+//function mousePosToFractionScrubbed(clientX){}
+//function fractionScrubbedToVideoTime(){}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Update screen functions
+
 
 // A function to make the scrubBar follow the mouse
 // Sets scrubBar.fractionScrubbed global
 function updateScrubBar(mouse_position) {
 	scrubBar.style.visibility = 'visible';
-	scrubBar.style.left = mouse_position - position(hashtagPlot).x; // e.clientX is the mouse position
+	scrubBar.style.left = mouse_position - position(hashtagPlot).x;
 	scrubBar.fractionScrubbed = parseInt(scrubBar.style.left, 10)/hashtagPlot.offsetWidth;
 }
 
@@ -107,7 +114,6 @@ function updateScrubBar(mouse_position) {
 function updateVideo() {
 	SOTUvideo.currentTime = SOTUvideo.duration * scrubBar.fractionScrubbed;
 }
-
 
 // Handling the scrolling transcript
 // Uses scrubBar.fractionScrubbed global
@@ -120,8 +126,12 @@ function updatePage() {
 	var dominantHashtag = dominantHashtagAt(SOTUvideo.currentTime);
 	updateMap(dominantHashtag);
 	updateChart();
-}
 
+	fractionScrubbed = SOTUvideo.currentTime/SOTUvideo.duration;
+	scrubBarStyleLeft = fractionScrubbed * hashtagPlot.offsetWidth;
+  mouse_position  = position(hashtagPlot).x + scrubBarStyleLeft;
+	updateScrubBar(mouse_position);
+}
 
 // Uses SOTUvideo.currentTime global
 function updateMap(hashtag) {
@@ -132,7 +142,6 @@ function updateMap(hashtag) {
 		colorState(state, getIntervalAt(SOTUvideo.currentTime), hashtag);
 	}
 }
-
 
 // Uses SOTUvideo.currentTime global
 function updateChart() {
@@ -199,9 +208,6 @@ function dominantHashtagAt(time) {
 	return dominantHashtags[0][1];
 }
 
-
-
-
 function getIntervalAt(seconds) {
 	// A function to get the nearest Interval we have from twitter for a given time
 	return UTCtoNearestAvailableIntervalData(videoTimeToUTC(seconds));
@@ -265,9 +271,6 @@ function engagementRange(interval, hashtag) {
 
 	return range;
 }
-
-
-
 
 function getTotalEngagement(interval, hashtag) {
 	// A function to sum up total engagement so we can plot things proportionally
