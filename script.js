@@ -1,10 +1,12 @@
+//These are the elements that get updated based on timeFraction
 var hashtagPlot = document.getElementById('hashtag-plot');
+var transcript = document.getElementById('sotu-transcript');
 var scrubBar = document.getElementById('scrub-bar');
 var SOTUvideo = document.getElementById('sotu-video');
+
 var videoOffset = 306;
 
 // Pull out all the transcript timestamps for use throughout
-var transcript = document.getElementById('sotu-transcript');
 var timestamps = extractTimestamps();
 function extractTimestamps() {
 	var timestamps = [];
@@ -12,7 +14,6 @@ function extractTimestamps() {
 	for (var i = 0; i < stampedDivs.length; i++) {
 		timestamps[i] = parseInt(stampedDivs[i].id.split('-')[2], 10);
 	}
-
 	return timestamps;
 }
 
@@ -56,7 +57,7 @@ window.onload = function () {
 			stateAbbreviations.push(statePaths[i].id);
 		}
 	}
-	updateMap(dominantHashtagAt(SOTUvideo.currentTime)); // This is where the action happens: recolor the states for the current time of the video.
+	updateMap(); // This is where the action happens: recolor the states for the current time of the video.
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,16 +66,26 @@ window.onload = function () {
 // Run hashtagMousemove every time the mouse moves above the hashtagPlot
 hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
 function hashtagMousemove(e) {
-	updateScrubBar(e.clientX);// e.clientX is the mouse position
-	updateVideo();
-	updateTranscript();
+	console.log('hashtagMousemove');
+	mousePosition = e.clientX; //e.clientX is the mouse position
+	timeFraction = (mousePosition - position(hashtagPlot).x)/hashtagPlot.offsetWidth;
+  updateTranscript(timeFraction);
+  updateVideo(timeFraction);
+  updateScrubBar(timeFraction);
+	updateMap();
+	updateChart();
 }
 
 hashtagPlot.addEventListener('mouseout', playVideo, false);
 function playVideo(e) {
-	//scrubBar.style.visibility = "hidden";
+	console.log('playVideo');
 	SOTUvideo.play();
 }
+
+// transcript.addEventListener('mouseout', playVideo, false);
+// function playVideo(e) {
+// 	SOTUvideo.play();
+// }
 
 // Adding the nav functionality for the video
 var hashtagNav = document.getElementsByTagName('li');
@@ -82,59 +93,65 @@ for (var i = 0; i < hashtagNav.length; i++) {
 	hashtagNav[i].addEventListener('click', navClick, false);
 }
 function navClick(e) {
+	console.log('navClick');
 	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
-	scrubBar.fractionScrubbed = (timestamp-videoOffset)/SOTUvideo.duration;
-	updateVideo();
-	updateTranscript();
+	timeFraction = (timestamp-videoOffset)/SOTUvideo.duration;
+	updateScrubBar(timeFraction);
+  updateTranscript(timeFraction);
+  updateVideo(timeFraction);
+	updateMap();
+	updateChart();
 }
 
 // Set up the video so that the chart is updated and the nation recolored every time the time changes
-document.getElementById('sotu-video').addEventListener("timeupdate", updatePage);
+SOTUvideo.addEventListener("timeupdate", videoPlay);
+function videoPlay(e){
+	console.log('videoPlay');
+  var timeFraction = SOTUvideo.currentTime/SOTUvideo.duration;
+  updateScrubBar(timeFraction);
+  updateTranscript(timeFraction);
+	updateMap();
+	updateChart();
+}
 
-//////////////////////////////////////////////////////////////////////////////////////
-// Converstions
-//function mousePosToFractionScrubbed(clientX){}
-//function fractionScrubbedToVideoTime(){}
+//transcript.addEventListener("scroll", SOTUvideo.pause(), false);
+
+transcript.addEventListener("mousemove", transcriptScroll, false);
+function transcriptScroll(e){
+	console.log('transcriptScroll');
+	console.log('ts: ' + timeFraction);
+
+  //0 to 17470
+  var timeFraction = transcript.scrollTop/17470;
+  //SOTUvideo.pause();
+  updateVideo(timeFraction);
+
+  updateScrubBar(timeFraction);
+
+ 	updateMap();
+  updateChart();
+ }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update screen functions
 
-
-// A function to make the scrubBar follow the mouse
-// Sets scrubBar.fractionScrubbed global
-function updateScrubBar(mouse_position) {
+function updateScrubBar(timeFraction) {
 	scrubBar.style.visibility = 'visible';
-	scrubBar.style.left = mouse_position - position(hashtagPlot).x;
-	scrubBar.fractionScrubbed = parseInt(scrubBar.style.left, 10)/hashtagPlot.offsetWidth;
+	scrubBar.style.left = timeFraction * hashtagPlot.offsetWidth;
 }
 
-// Uses scrubBar.fractionScrubbed global
-// Sets SOTUvideo.currentTime
-function updateVideo() {
-	SOTUvideo.currentTime = SOTUvideo.duration * scrubBar.fractionScrubbed;
+function updateVideo(timeFraction) {
+	SOTUvideo.currentTime = SOTUvideo.duration * timeFraction;
 }
 
-// Handling the scrolling transcript
-// Uses scrubBar.fractionScrubbed global
-function updateTranscript() {
-	scrollToTimestamp(nearestStamp(scrubBar.fractionScrubbed));
+function updateTranscript(timeFraction) {
+	scrollToTimestamp(nearestStamp(timeFraction));
 }
 
-// Uses SOTUvideo.currentTime global
-function updatePage() {
-	var dominantHashtag = dominantHashtagAt(SOTUvideo.currentTime);
-	updateMap(dominantHashtag);
-	updateChart();
-
-	fractionScrubbed = SOTUvideo.currentTime/SOTUvideo.duration;
-	scrubBarStyleLeft = fractionScrubbed * hashtagPlot.offsetWidth;
-  mouse_position  = position(hashtagPlot).x + scrubBarStyleLeft;
-	updateScrubBar(mouse_position);
-}
-
-// Uses SOTUvideo.currentTime global
-function updateMap(hashtag) {
+//Note: Uses SOTUvideo.currentTime global
+function updateMap() {
+	hashtag = dominantHashtagAt(SOTUvideo.currentTime);
 	// A function to go through every state and color it correctly for a given hashtag
 	for ( var k = 0; k < stateAbbreviations.length; k++ ) {
 		var stateAbbreviation = stateAbbreviations[k];
@@ -143,7 +160,7 @@ function updateMap(hashtag) {
 	}
 }
 
-// Uses SOTUvideo.currentTime global
+//Note: Uses SOTUvideo.currentTime global
 function updateChart() {
 	// Now that we have all the needed data, actually redraw the chart
 
@@ -285,6 +302,10 @@ function getTotalEngagement(interval, hashtag) {
 	}
 
 	return sum;
+}
+
+function videoTime(timeFraction){
+  return timeFraction * SOTUvideo.duration;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
