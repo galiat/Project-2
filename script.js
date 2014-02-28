@@ -3,7 +3,6 @@ var hashtagPlot = document.getElementById('hashtag-plot');
 var transcript = document.getElementById('sotu-transcript');
 var scrubBar = document.getElementById('scrub-bar');
 var SOTUvideo = document.getElementById('sotu-video');
-
 var videoOffset = 306;
 
 // Pull out all the transcript timestamps for use throughout
@@ -20,7 +19,7 @@ function extractTimestamps() {
 // Initialize these for loading later, after window.onload
 var nation = null;
 var statePaths = null;
-var stateAbbreviations = null;
+var stateAbbreviations = [];
 
 // Hardcoded colors for each hashtag, grabbed from the twitter site with https://en.wikipedia.org/wiki/DigitalColor_Meter
 var hashtagColors = {
@@ -66,7 +65,7 @@ window.onload = function () {
 // Run hashtagMousemove every time the mouse moves above the hashtagPlot
 hashtagPlot.addEventListener('mousemove', hashtagMousemove, false);
 function hashtagMousemove(e) {
-	console.log('hashtagMousemove');
+	//console.log('hashtagMousemove');
 	mousePosition = e.clientX; //e.clientX is the mouse position
 	timeFraction = (mousePosition - position(hashtagPlot).x)/hashtagPlot.offsetWidth;
   updateTranscript(timeFraction);
@@ -78,7 +77,7 @@ function hashtagMousemove(e) {
 
 hashtagPlot.addEventListener('mouseout', playVideo, false);
 function playVideo(e) {
-	console.log('playVideo');
+	//console.log('playVideo');
 	SOTUvideo.play();
 }
 
@@ -93,7 +92,7 @@ for (var i = 0; i < hashtagNav.length; i++) {
 	hashtagNav[i].addEventListener('click', navClick, false);
 }
 function navClick(e) {
-	console.log('navClick');
+	//console.log('navClick');
 	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
 	timeFraction = (timestamp-videoOffset)/SOTUvideo.duration;
 	updateScrubBar(timeFraction);
@@ -106,7 +105,7 @@ function navClick(e) {
 // Set up the video so that the chart is updated and the nation recolored every time the time changes
 SOTUvideo.addEventListener("timeupdate", videoPlay);
 function videoPlay(e){
-	console.log('videoPlay');
+	//console.log('videoPlay');
   var timeFraction = SOTUvideo.currentTime/SOTUvideo.duration;
   updateScrubBar(timeFraction);
   updateTranscript(timeFraction);
@@ -114,12 +113,11 @@ function videoPlay(e){
 	updateChart();
 }
 
-//transcript.addEventListener("scroll", SOTUvideo.pause(), false);
-
-transcript.addEventListener("mousemove", transcriptScroll, false);
+//transcript.addEventListener("scroll", transcriptScroll, false);
+//transcript.addEventListener("mousemove", transcriptScroll, false);
 function transcriptScroll(e){
-	console.log('transcriptScroll');
-	console.log('ts: ' + timeFraction);
+	//console.log('transcriptScroll');
+	//console.log('ts: ' + timeFraction);
 
   //0 to 17470
   var timeFraction = transcript.scrollTop/17470;
@@ -146,7 +144,17 @@ function updateVideo(timeFraction) {
 }
 
 function updateTranscript(timeFraction) {
-	scrollToTimestamp(nearestStamp(timeFraction));
+	var currentTimestampNumber = nearestStamp(timeFraction);
+	var currentTimestampId = "transcript-time-" + currentTimestampNumber;
+	var currentTimestamp = document.getElementById(currentTimestampId);
+	var higlightedTimestamp = transcript.getElementsByClassName('current-timestamp')[0]; // there can be only one. TODO maybe make this more robust later
+
+	if (currentTimestamp != higlightedTimestamp){
+	  scrollToTimestamp(currentTimestampNumber);
+	  higlightedTimestamp.className = "";
+    currentTimestamp.className += "current-timestamp";
+  }
+
 }
 
 //Note: Uses SOTUvideo.currentTime global
@@ -313,7 +321,7 @@ function videoTime(timeFraction){
 
 function scrollToTimestamp(timestamp) {
 	var target = transcript.querySelector('#transcript-time-' + timestamp);
-	document.getElementById('sotu-transcript').scrollTop = target.offsetTop;
+	transcript.scrollTop = target.offsetTop - 340; //TODO hieght of transcript
 }
 
 function nearestStamp(fractionScrubbed) {

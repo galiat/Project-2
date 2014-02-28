@@ -53,6 +53,10 @@ html, body {
 	width: 100%;
 }
 
+.current-timestamp{
+	background-color: #F4F4C8
+}
+
 nav {
 	width: 100%	;
 
