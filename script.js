@@ -68,7 +68,7 @@ function hashtagMousemove(e) {
 	//console.log('hashtagMousemove');
 	mousePosition = e.clientX; //e.clientX is the mouse position
 	timeFraction = (mousePosition - position(hashtagPlot).x)/hashtagPlot.offsetWidth;
-  updateTranscript(timeFraction);
+  updateTranscript(timeFraction, true);
   updateVideo(timeFraction);
   updateScrubBar(timeFraction);
 	updateMap();
@@ -96,7 +96,7 @@ function navClick(e) {
 	var timestamp = parseInt(this.getAttribute('data-timestamp'), 10);
 	timeFraction = (timestamp-videoOffset)/SOTUvideo.duration;
 	updateScrubBar(timeFraction);
-  updateTranscript(timeFraction);
+  updateTranscript(timeFraction, true);
   updateVideo(timeFraction);
 	updateMap();
 	updateChart();
@@ -108,26 +108,31 @@ function videoPlay(e){
 	//console.log('videoPlay');
   var timeFraction = SOTUvideo.currentTime/SOTUvideo.duration;
   updateScrubBar(timeFraction);
-  updateTranscript(timeFraction);
+  updateTranscript(timeFraction, true);
 	updateMap();
 	updateChart();
 }
 
-//transcript.addEventListener("scroll", transcriptScroll, false);
+transcript.addEventListener("click", transcriptClick, false);
 //transcript.addEventListener("mousemove", transcriptScroll, false);
-function transcriptScroll(e){
-	//console.log('transcriptScroll');
-	//console.log('ts: ' + timeFraction);
+function transcriptClick(e){
+	if(e.target.tagName == "P"){
 
-  //0 to 17470
-  var timeFraction = transcript.scrollTop/17470;
-  //SOTUvideo.pause();
-  updateVideo(timeFraction);
+	  //0 to 17470
+	  //var timeFraction = transcript.scrollTop/17470;
+	  //SOTUvideo.pause();
+    var timestampNumber = parseInt(e.target.parentNode.id.split('-')[2]);
+    var timeFraction = (timestampNumber - videoOffset)/SOTUvideo.duration
 
-  updateScrubBar(timeFraction);
 
- 	updateMap();
-  updateChart();
+	  updateVideo(timeFraction);
+
+	  updateScrubBar(timeFraction);
+		updateTranscript(timeFraction, false);
+	 	updateMap();
+	  updateChart();
+  }
+
  }
 
 
@@ -143,14 +148,23 @@ function updateVideo(timeFraction) {
 	SOTUvideo.currentTime = SOTUvideo.duration * timeFraction;
 }
 
-function updateTranscript(timeFraction) {
+function updateTranscript(timeFraction, move) {
 	var currentTimestampNumber = nearestStamp(timeFraction);
 	var currentTimestampId = "transcript-time-" + currentTimestampNumber;
 	var currentTimestamp = document.getElementById(currentTimestampId);
 	var higlightedTimestamp = transcript.getElementsByClassName('current-timestamp')[0]; // there can be only one. TODO maybe make this more robust later
 
+	//if (move){
+		//transcript.scrollTop = timeFraction * 17470
+		//transcript.scrollTop =currentTimestamp.offsetTop - 340; //TODO hieght of transcrip
+    //scrollToTimestamp(currentTimestampNumber);
+  //}
+
+
 	if (currentTimestamp != higlightedTimestamp){
-	  scrollToTimestamp(currentTimestampNumber);
+		if (move) {
+		  scrollToTimestamp(currentTimestampNumber);
+	  }
 	  higlightedTimestamp.className = "";
     currentTimestamp.className += "current-timestamp";
   }

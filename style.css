@@ -53,10 +53,6 @@ html, body {
 	width: 100%;
 }
 
-.current-timestamp{
-	background-color: #F4F4C8
-}
-
 nav {
 	width: 100%	;
 
@@ -109,6 +105,16 @@ li a {
 	padding-left: 1em;
 	padding-right: 1em;
 }
+
+
+.current-timestamp{
+	background-color: #F4F4C8
+}
+
+#sotu-transcript div:hover{
+	background-color: #F6F468;
+}
+
 
 
 /* Right Panel */
