@@ -4,6 +4,7 @@ var transcript = document.getElementById('sotu-transcript');
 var scrubBar = document.getElementById('scrub-bar');
 var SOTUvideo = document.getElementById('sotu-video');
 var videoOffset = 306;
+SOTUvideo.muted = true;
 
 // Pull out all the transcript timestamps for use throughout
 var timestamps = extractTimestamps();
@@ -113,8 +114,7 @@ function videoPlay(e){
 	updateChart();
 }
 
-transcript.addEventListener("click", transcriptClick, false);
-//transcript.addEventListener("mousemove", transcriptScroll, false);
+//transcript.addEventListener("click", transcriptClick, false);
 function transcriptClick(e){
 	if(e.target.tagName == "P"){
 
@@ -135,6 +135,45 @@ function transcriptClick(e){
 
  }
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+transcript.addEventListener('click', clickInsertTimestamp, false);
+function clickInsertTimestamp(e){
+  if(e.target.tagName == 'P'){
+  	insertTimestamp(e.target);
+  }
+}
+
+function insertTimestamp(paragraph){
+	// If its the first paragraph in the div, it already has a timestamp
+	if (paragraph.parentNode.firstElementChild != paragraph){
+		console.log('creating new timestamp');
+		timestampNumber = Math.round(SOTUvideo.currentTime);
+		paragraph.parentNode.insertAdjacentHTML('afterend', "<div id='transcript-time-" + timestampNumber+ "'></div>");
+		new_div = document.getElementById("transcript-time-" + timestampNumber);
+		console.log(new_div);
+		var moveParagraph = false;
+		var children = paragraph.parentNode.children; //the set of children is altered in the loop, so we need to cache it
+		for(var i =0; i < children.length; i++){
+			console.log('children.length ' + children.length);
+			var current_paragraph = children[i];
+			console.log(current_paragraph);
+			if(paragraph == current_paragraph){
+				console.log('paragraph == current_paragraph');
+				moveParagraph = true;
+			}
+			if(moveParagraph){
+				console.log('moving ' + current_paragraph.innerText);
+				new_div.appendChild(current_paragraph);
+				i = i-1; //because we moved it, all child elements shifted
+			}
+			console.log('children.length ' + children.length);
+		}
+
+	}
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update screen functions
