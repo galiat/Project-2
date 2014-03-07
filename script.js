@@ -115,25 +115,20 @@ function videoPlay(e){
 }
 
 //transcript.addEventListener("click", transcriptClick, false);
-function transcriptClick(e){
-	if(e.target.tagName == "P"){
-
-	  //0 to 17470
-	  //var timeFraction = transcript.scrollTop/17470;
-	  //SOTUvideo.pause();
-    var timestampNumber = parseInt(e.target.parentNode.id.split('-')[2]);
-    var timeFraction = (timestampNumber - videoOffset)/SOTUvideo.duration
-
-
-	  updateVideo(timeFraction);
-
-	  updateScrubBar(timeFraction);
-		updateTranscript(timeFraction, false);
-	 	updateMap();
-	  updateChart();
-  }
-
- }
+// function transcriptClick(e){
+// 	if(e.target.tagName == "P"){
+// 	  //0 to 17470
+// 	  //var timeFraction = transcript.scrollTop/17470;
+// 	  //SOTUvideo.pause();
+//     var timestampNumber = parseInt(e.target.parentNode.id.split('-')[2]);
+//     var timeFraction = (timestampNumber - videoOffset)/SOTUvideo.duration
+// 	  updateVideo(timeFraction);
+// 	  updateScrubBar(timeFraction);
+// 		updateTranscript(timeFraction, false);
+// 	 	updateMap();
+// 	  updateChart();
+//   }
+//  }
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +142,9 @@ function clickInsertTimestamp(e){
 
 function insertTimestamp(paragraph){
 	// If its the first paragraph in the div, it already has a timestamp
-	if (paragraph.parentNode.firstElementChild != paragraph){
+	// Also, it needs to be the in the current timestamp div.
+
+	if (paragraph.parentNode.firstElementChild != paragraph && paragraph.parentNode.className == 'current-timestamp'){
 		console.log('creating new timestamp');
 		timestampNumber = Math.round(SOTUvideo.currentTime);
 		paragraph.parentNode.insertAdjacentHTML('afterend', "<div id='transcript-time-" + timestampNumber+ "'></div>");
@@ -169,7 +166,18 @@ function insertTimestamp(paragraph){
 				i = i-1; //because we moved it, all child elements shifted
 			}
 			console.log('children.length ' + children.length);
+
 		}
+
+    //TODO. change the highlighing
+		//TODO c&p
+		// var currentTimestamp = new_div;
+		// var higlightedTimestamp = transcript.getElementsByClassName('current-timestamp')[0];
+		// if (currentTimestamp != higlightedTimestamp){
+		// 	console.log('change style');
+		//   higlightedTimestamp.className = "";
+	  //    currentTimestamp.className += "current-timestamp";
+	  //  }
 
 	}
 
