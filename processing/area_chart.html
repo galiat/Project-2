@@ -1,0 +1,76 @@
+<html>
+
+  <head>
+    <script src='https://github.com/downloads/processing-js/processing-js/processing-1.4.1.js'></script>
+    <style>
+      canvas { outline: none; } /* So that when we click, the canvas isn't outlined */
+    </style>
+  </head>
+
+  <body>
+    <canvas></canvas>
+  </body>
+
+  <script>
+    var canvas = document.getElementsByTagName('canvas')[0];
+    var width = 600;
+
+    function sketch(p) {
+
+
+
+      var energy = [10, 30, 20, 50, 100, 250];
+      var jobs = [20, 40, 15, 25, 35, 45];
+      var edu = [5, 20, 10, 20, 50, 75];
+
+
+      function plot(y_values) {
+        p.fill(255, 0, 0);
+        p.noStroke();
+        var data = dataize_y_values(y_values);
+        var plot = p.beginShape();
+
+        for (var i = 0; i < data.length; i++) {
+          p.vertex(data[i].x, data[i].y);
+        }
+               //data[data.length-1].x is the very last x value for the data
+        p.vertex(data[data.length-1].x, 0); // add a point at the bottom right corner
+        p.vertex(0, 0); // add a point at the origin. If commented out the bottom left corner is not filld in
+
+        p.endShape();
+      }
+
+      function dataize_y_values(y){
+        var data = [];
+        var xSpacing = width/(y.length-1); // the spacing between our vertices
+        for (var i = 0; i < y.length; i++) {
+          data[i] = {'x': i*xSpacing, 'y': y[i]}; // use a dictionary for easy x, y access
+        }
+        return data
+      }
+
+      function normalizeCoordinates() {
+        // flip Processing's weird coordinate system with (0, 0) in the top left
+        p.translate(0, p.height)
+        p.scale(1, -1);
+      }
+
+      function setup() {
+        p.size(width, p.max(energy)*1.25); // scale our sketch to be a bit bigger than our tallest y
+      }
+
+      function draw () {
+        normalizeCoordinates();
+
+        plot(energy);
+      }
+
+      // tell Processing which functions to use for our setup and draw
+      p.setup = setup;
+      p.draw = draw;
+    }
+
+    var p = new Processing(canvas, sketch); // actually attach and run the sketch
+  </script>
+
+</html>
