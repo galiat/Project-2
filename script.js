@@ -233,12 +233,13 @@ function updateMap() {
 function updateChart() {
 	// Now that we have all the needed data, actually redraw the chart
 
-	var currentInterval = getIntervalAt(SOTUvideo.currentTime);
+	var currentInterval = getIntervalAt(SOTUvideo.currentTime); //currentInterval is the data from twitter for whatever is the closest time interval
 	var numbers = document.querySelectorAll('#hashtag-chart li div.bar'); // Get all the bar chart divs
 
 	var rawTotals = {};
 	for (var i = 0; i < numbers.length; i++) {
 		// Total engagement for a given hashtag across the nation
+		                                                               //numbers[i].id is 'energy', 'job' etc
 		rawTotals[numbers[i].id] = getTotalEngagement(currentInterval, numbers[i].id);
 	}
 
@@ -359,6 +360,7 @@ function engagementRange(interval, hashtag) {
 }
 
 function getTotalEngagement(interval, hashtag) {
+	console.log(interval);
 	// A function to sum up total engagement so we can plot things proportionally
 	var sum = 0;
 	for ( var state in interval ) {

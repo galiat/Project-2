@@ -4,7 +4,7 @@
   <script src='http://d3js.org/d3.v3.min.js'></script>
 
   <style>
-    #chart div{
+    #hashtag-chart li{
       background-color: rgb(200,0,0);
       margin-bottom: 5px;
       height: 10px;
@@ -13,22 +13,210 @@
 </head>
 
 <body>
-  <div id='chart'>
-    <div id='foo'></div>
-    <div>
+  <div id='hashtag-chart'>
+    <ol>
+      <li><div class='hashtag'></div><div class='bar' id='energy'></div></li>
+      <li><div class='hashtag'></div><div class='bar' id='jobs'></div></li>
+      <li><div class='hashtag'></div><div class='bar' id='education'></div></li>
+      <li><div class='hashtag'></div><div class='bar' id='fairness'></div></li>
+      <li><div class='hashtag'></div><div class='bar' id='healthcare'></div></li>
+      <li><div class='hashtag'></div><div class='bar' id='defense'></div></li>
+    </ol>
   </div>
 </body>
 
 <script>
-  var data = [100, 50, 250, 50];
+  var data = [100, 50, 250, 50, 150, 70];
+  updateGraph(data);
+  function updateGraph(data){
+    d3.select('#hashtag-chart').selectAll("li").data(data).style("width", function(d) { return d + "px"; });
+  }
 
 
-  d3.select('#chart').selectAll("div").data(data).style("width", function(d) { return d + "px"; });
-  d3.select('#chart')
-    .selectAll("div") // for each (in our case non-existent) div
-    .data(data) // bind our data
-    .enter().append("div") // and iterate over our data, appending a div for every mismatch in number between our selection and our data
-    .style("width", function(d) { return d + "px"; }); // change the style of each appended div using this function on each data element
+ currentTime = 0;
+
+
+function updateChart() {
+  // Now that we have all the needed data, actually redraw the chart
+
+  var currentInterval = getIntervalAt(currentTime); //currentInterval is the data from twitter for whatever is the closest time interval
+  var numbers = document.querySelectorAll('#hashtag-chart li div.bar'); // Get all the bar chart divs
+
+  var rawTotals = {};
+  for (var i = 0; i < numbers.length; i++) {
+    // Total engagement for a given hashtag across the nation
+                                                                   //numbers[i].id is 'energy', 'job' etc
+    rawTotals[numbers[i].id] = getTotalEngagement(currentInterval, numbers[i].id);
+  }
+
+  // Figure out the range of engagement
+  var maxEngagement = 0;
+  var totalEngagement = 0;
+  for ( var eachHashtag in rawTotals ) {
+    maxEngagement = Math.max(maxEngagement, rawTotals[eachHashtag]);
+    totalEngagement += rawTotals[eachHashtag];
+  }
+
+  // For each hashtag, calculate how to scale the bars so that the largest is '1'
+  for (var hashtag in rawTotals) {
+    var newWidth = interpolate(rawTotals[hashtag], [0, maxEngagement], [0,1])*65 + '%';
+    var bar = document.querySelector('li div#' + hashtag);
+    bar.style.width = newWidth;
+
+    // Color the dominant hashtag, make the rest gray
+    var sibling = null; // Holds the text next to each bar
+    if (hashtag == dominantHashtagAt(SOTUvideo.currentTime)) {
+      bar.style.backgroundColor = hashtagColors[hashtag];
+      sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
+      sibling.style.color = hashtagColors[hashtag];
+    }
+    else {
+      sibling = bar.parentNode.getElementsByClassName('hashtag')[0];
+      sibling.style.color = '#d3d3d3';
+      bar.style.backgroundColor = '#d3d3d3';
+    }
+
+  }
+}
+
+//////////////////////////////////////////
+// Other stuff
+
+function dominantHashtagAt(time) {
+  // A function to figure out the dominant hashtag at a given time
+
+  // Go backwards through the hashtags looking for the first which predates the time we're looking for
+  var dominantHashtag = null;
+  for ( var j = dominantHashtags.length - 1; j >= 0; j-- ) {
+    var timestamp = dominantHashtags[j][0];
+    var hashtag = dominantHashtags[j][1];
+    timestamp -= videoOffset;
+
+    if (time > timestamp) {
+      return hashtag;
+    }
+  }
+
+  // Otherwise, if going backwards hasn't found one that's before the time we're looking for, return the first
+  return dominantHashtags[0][1];
+}
+
+function getIntervalAt(seconds) {
+  // A function to get the nearest Interval we have from twitter for a given time
+  return UTCtoNearestAvailableIntervalData(videoTimeToUTC(seconds));
+}
+
+function UTCtoNearestAvailableIntervalData(UTCdate) {
+  // Go from a UTC date/time to the nearest available Interval we have from twitter
+
+  // Get all the tweetIntervals from the tweetValues we loaded from values.json
+  var tweetIntervals = Object.keys(tweetValues);
+  for (var i = 0; i < tweetIntervals.length; i++) {
+    // Tweets are indexed by interval (e.g. 2014-01-29 02:15:::2014-01-29 02:15), and we just want the start of the interval
+    var tweetIntervalStart = new Date(tweetIntervals[i].split(':::')[0]);
+    // As we go through, check if the time we just converted is after the time we're looking fo
+    if (UTCdate < tweetIntervalStart) {
+      return tweetValues[tweetIntervals[i-1]];
+    }
+  }
+}
+
+// function videoTimeToUTC(seconds){
+//   // From a certain number of seconds after the SOTU started, get the absolute time in UTC
+//   var SOTUstart = new Date(2014, 0, 28, 21, 15, 0); // the date of the SOTH
+//   UTCOffset = 5*60*60; // in seconds
+//   return new Date(SOTUstart.getTime() + 1000*(UTCOffset + seconds)); // *1000 b/c Date expects milliseconds
+// }
+
+
+function engagementRange(interval, hashtag) {
+  // A function getting the min (range[0]) and max (range[1]) engagement for a given hashtag in a given interval across the country
+  var range = [0,0];
+  for ( var state in interval ) {
+    var stateData = interval[state];
+    for ( var i = 0; i < stateData.length; i++ ) {
+      if ('#' + hashtag == stateData[i][0]) {
+        var frequency = stateData[i][1];
+        range[0] = Math.min(range[0], frequency);
+        range[1] = Math.max(range[1], frequency);
+      }
+    }
+  }
+
+  return range;
+}
+
+function getTotalEngagement(interval, hashtag) {
+  console.log(interval);
+  // A function to sum up total engagement so we can plot things proportionally
+  var sum = 0;
+  for ( var state in interval ) {
+    var stateData = interval[state];
+    for ( var i = 0; i < stateData.length; i++ ) {
+      if ('#' + hashtag == stateData[i][0]) {
+        sum += stateData[i][1];
+      }
+    }
+  }
+
+  return sum;
+}
+
+// function videoTime(timeFraction){
+//   return timeFraction * SOTUvideo.duration;
+// }
+
+////////////////////////////////////////////////////////////////////////////////
+// Transcript Helper Functions
+function nearestStamp(fractionScrubbed) {
+  // Figure out what the closest timestamp we have is to the current amount of scrubbing
+  var timestampEquivalent = fractionScrubbed * SOTUvideo.duration + videoOffset; // IF we had a timestamp, what would it be?
+  for (var i = 0; i < timestamps.length - 1; i++) {
+    if ( timestamps[i+1] > timestampEquivalent ) { // Find teh first timestamp our guess is greater than
+      return timestamps[i];
+    }
+  }
+  return timestamps[timestamps.length - 1];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Utility functions
+
+function position(element) {
+  // A function which takes an element and returns a dictionary with its x and y position
+    for (var lx=0, ly=0;
+         element !== null;
+         lx += element.offsetLeft, ly += element.offsetTop, element = element.offsetParent);
+
+    return {x: lx, y: ly};
+}
+
+function interpolate(value, from, to) {
+  // A function that lets us scale a value from one scale to another-- e.g. 5 : [0, 10] to 0.5 for [0, 1]
+  var fromSpread = from[1] - from[0];
+  var toSpread = to[1] - to[0];
+
+  var ratio = toSpread/fromSpread;
+
+  return (value - from[0])*ratio + to[0];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </script>
 
 </html>
