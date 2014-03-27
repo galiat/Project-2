@@ -47,7 +47,8 @@ var hashtagColors = {
 window.onload = function () {
 	// We have to make sure that we have the nation and the states
 	// But because of the size and loading time of the SVG, we have to attach it to an event handler for window.onload to make sure it's fully loaded
-	nation = document.getElementsByTagName('object')[0].contentDocument.getElementsByTagName('svg')[0];
+	//nation = document.getElementsByTagName('object')[0].contentDocument.getElementsByTagName('svg')[0];
+	nation = document.getElementsByTagName('svg')[0];
 	statePaths = nation.querySelectorAll('.state');
 
 	// Go through and get all the state abbreviations used
@@ -145,27 +146,27 @@ function insertTimestamp(paragraph){
 	// Also, it needs to be the in the current timestamp div.
 
 	if (paragraph.parentNode.firstElementChild != paragraph && paragraph.parentNode.className == 'current-timestamp'){
-		console.log('creating new timestamp');
+		//console.log('creating new timestamp');
 		timestampNumber = Math.round(SOTUvideo.currentTime);
 		paragraph.parentNode.insertAdjacentHTML('afterend', "<div id='transcript-time-" + timestampNumber+ "'></div>");
 		new_div = document.getElementById("transcript-time-" + timestampNumber);
-		console.log(new_div);
+		//console.log(new_div);
 		var moveParagraph = false;
 		var children = paragraph.parentNode.children; //the set of children is altered in the loop, so we need to cache it
 		for(var i =0; i < children.length; i++){
-			console.log('children.length ' + children.length);
+			//console.log('children.length ' + children.length);
 			var current_paragraph = children[i];
-			console.log(current_paragraph);
+			//console.log(current_paragraph);
 			if(paragraph == current_paragraph){
-				console.log('paragraph == current_paragraph');
+				//console.log('paragraph == current_paragraph');
 				moveParagraph = true;
 			}
 			if(moveParagraph){
-				console.log('moving ' + current_paragraph.innerText);
+				//console.log('moving ' + current_paragraph.innerText);
 				new_div.appendChild(current_paragraph);
 				i = i-1; //because we moved it, all child elements shifted
 			}
-			console.log('children.length ' + children.length);
+			//console.log('children.length ' + children.length);
 
 		}
 
@@ -360,7 +361,7 @@ function engagementRange(interval, hashtag) {
 }
 
 function getTotalEngagement(interval, hashtag) {
-	console.log(interval);
+	//console.log(interval);
 	// A function to sum up total engagement so we can plot things proportionally
 	var sum = 0;
 	for ( var state in interval ) {

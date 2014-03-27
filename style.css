@@ -127,7 +127,7 @@ li a {
 	height: 50%;
 }
 
-#map object {
+#map svg {
 	-webkit-transform: scale(0.2875); /* Scaling down the original SVG */
 	-webkit-transform-origin: 0 0; /* Changing where it's scaled from to the origin instead of the center */
 

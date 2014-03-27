@@ -3,6 +3,8 @@
 	<head>
 		<link rel='stylesheet' type='text/css' href='./style.css'>
 		<link href='http://fonts.googleapis.com/css?family=Crimson+Text' rel='stylesheet' type='text/css'>
+    <script type="text/javascript" src="d3/d3.min.js"></script>
+
 	</head>
 
 	<body>
@@ -468,8 +470,8 @@
 
 			<div class='panel' id='right'>
 				<div id='map'>
-					<object data="./media/US.svg" type="image/svg+xml">
-					</object>
+<!-- 					<object data="./media/US.svg" type="image/svg+xml">
+					</object> -->
 				</div>
 				<div id='hashtag-chart'>
 					<ol>
@@ -505,5 +507,13 @@
 		<script src='./data/values.json'></script> <!-- Note that tweetValues is defined in here, the json is executable JavaScript -->
 		<script src='./script.js'></script>
 	</body>
+    <script type="text/javascript">
+        d3.xml('./media/US.svg', "image/svg+xml", function(xml) {
+          svg = document.getElementById('map').appendChild(xml.documentElement);
+          d3.select('#map').select('svg').selectAll('.state')
+           .on('mouseover', function(){d3.select(this).style("fill", "aliceblue");})
+           .on('mouseout',  function(){d3.select(this).style("fill", "grey");});
 
+        });
+    </script>
 </html>
