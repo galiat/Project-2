@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+</head>
+<body>
+    <h2>catepillars</h2>
+    <p>Created while futzing with <a href='http://christopheviau.com/d3_tutorial/'>this</a> d3 tutorial. Hover over to color in the catepillar</p>
+    <div id="cat"></div>
+    <script type="text/javascript">
+
+    var dataset = [],
+        i = 0;
+
+    for(i=0; i<6; i++){
+        dataset.push(Math.round(Math.random()*100));
+    }
+
+    var cat = d3.select("#cat")
+        .append("svg")
+        .attr("width", 600)
+        .attr("height", 200);
+
+    cat.selectAll("circle")
+        .data(dataset)
+        .enter().append("circle")
+        .style("stroke", "gray")
+        .style("fill", "white")
+        .attr("r", 50)
+        .attr("cx", function(d, i){return i*80 +50})
+        .attr("cy", function(d, i){return d + 20})
+        .on("mouseover", function(){d3.select(this).style("fill", "aliceblue");})
+        .on("mouseout", function(d, i){d3.select(this).style("fill", 16777215/d);});
+
+
+    </script>
+</body>
+</html>

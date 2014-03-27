@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+</head>
+<body>
+    <div id='map'>
+        <object id="map_data" data="../media/US.svg" type="image/svg+xml">
+    </div>
+    <script type="text/javascript">
+        var svg = d3.select('#map_data').select('svg');
+        var states = svg.selectAll(".state");
+
+
+    </script>
+</body>
+</html>
