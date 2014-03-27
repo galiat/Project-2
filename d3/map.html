@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+    <script type="text/javascript" src="d3.min.js"></script>
 </head>
 <body>
-    <div id='map'>
-        <object id="map_data" data="../media/US.svg" type="image/svg+xml">
-    </div>
+    <div id='map'></div>
     <script type="text/javascript">
-        var svg = d3.select('#map_data').select('svg');
-        var states = svg.selectAll(".state");
+        d3.xml('../media/US.svg', "image/svg+xml", function(xml) {
+          svg = document.getElementById('map').appendChild(xml.documentElement);
+          d3.select('#map').select('svg').selectAll('.state')
+           .on('mouseover', function(){d3.select(this).style("fill", "aliceblue");})
+           .on('mouseout',  function(){d3.select(this).style("fill", "grey");});
 
-
+        });
     </script>
 </body>
 </html>
