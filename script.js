@@ -223,11 +223,19 @@ function updateTranscript(timeFraction, move) {
 function updateMap() {
 	hashtag = dominantHashtagAt(SOTUvideo.currentTime);
 	// A function to go through every state and color it correctly for a given hashtag
-	for ( var k = 0; k < stateAbbreviations.length; k++ ) {
-		var stateAbbreviation = stateAbbreviations[k];
-		var state = nation.getElementById(stateAbbreviation);
-		colorState(state, getIntervalAt(SOTUvideo.currentTime), hashtag);
-	}
+
+	// for ( var k = 0; k < stateAbbreviations.length; k++ ) {
+	// 	var stateAbbreviation = stateAbbreviations[k];
+	// 	var state = nation.getElementById(stateAbbreviation);
+	// 	colorState(state, getIntervalAt(SOTUvideo.currentTime), hashtag);
+	// }
+
+  var map = d3.select("#map").select('svg');
+  map.selectAll(".state")
+      .data(stateAbbreviations)
+      .style("fill", hashtagColors[hashtag]);
+      //.style("trans", function(stateAbbrev, i){return i*80 +50})))
+
 }
 
 //Note: Uses SOTUvideo.currentTime global
