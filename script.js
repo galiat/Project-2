@@ -233,8 +233,9 @@ function updateMap() {
   var map = d3.select("#map").select('svg');
   map.selectAll(".state")
       .data(stateAbbreviations)
-      .style("fill", hashtagColors[hashtag]);
-      //.style("trans", function(stateAbbrev, i){return i*80 +50})))
+      .style("fill", hashtagColors[hashtag])
+      .style("opacity", function(stateAbbrev, i){return stateOpacity(stateAbbrev, getIntervalAt(SOTUvideo.currentTime), hashtag)});
+
 
 }
 
@@ -331,24 +332,24 @@ function videoTimeToUTC(seconds){
 	return new Date(SOTUstart.getTime() + 1000*(UTCOffset + seconds)); // *1000 b/c Date expects milliseconds
 }
 
-function colorState(statePath, interval, hashtag) {
+function stateOpacity(stateAbbrev, interval, hashtag) {
 	// A function to color a given state, at a given interval, for a given hashtag
-	statePath.style.opacity = 0.1; // Default to 10% opacity
-	statePath.style.fill = hashtagColors[hashtag]; // Figure out what color we should use
+	opacity = 0.1; // Default to 10% opacity
 
-	if (Object.keys(interval).indexOf(statePath.id) != -1) { // If a state was sufficiently engaged in this interval to have data
+	if (Object.keys(interval).indexOf(stateAbbrev) != -1) { // If a state was sufficiently engaged in this interval to have data
 		var range = engagementRange(interval, hashtag); // Figure out the max and min of engagement overall so we can color proportionally
-		var stateEngagements = interval[statePath.id]; // And then pull out this one state's engagements with different hashtags
+		var stateEngagements = interval[stateAbbrev]; // And then pull out this one state's engagements with different hashtags
 
 		for (var i = 0; i < stateEngagements.length; i++) { // Iterate over the hashtags
 			if ( stateEngagements[i][0] == '#' + hashtag ) { // And when we find the one we're coloring for
 				var myEngagement = parseFloat(stateEngagements[i][1], 10);
 				var newOpacity = interpolate(myEngagement, range, [0.1,1]);
-				statePath.style.opacity = newOpacity; // set the opacity to be proportional to our state's relative engagement
-				return; // and stop iterating
+				// return the opacity to be proportional to our state's relative engagement
+				return newOpacity; // and stop iterating
 			}
 		}
 	}
+	return opacity;
 }
 
 function engagementRange(interval, hashtag) {
