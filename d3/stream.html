@@ -17,17 +17,16 @@ var colorrange = [];
 
 
 function chart(csvpath, color) {
-
-if (color == "blue") {
-  colorrange = ["#045A8D", "#2B8CBE", "#74A9CF", "#A6BDDB", "#D0D1E6", "#F1EEF6"];
-}
-else if (color == "pink") {
-  colorrange = ["#980043", "#DD1C77", "#DF65B0", "#C994C7", "#D4B9DA", "#F1EEF6"];
-}
-else if (color == "orange") {
-  colorrange = ["#B30000", "#E34A33", "#FC8D59", "#FDBB84", "#FDD49E", "#FEF0D9"];
-}
-strokecolor = colorrange[0];
+/*
+  "energy": "rgb(50,160,44)",
+  "jobs": "rgb(255,127,0)",
+  "education": "rgb(178,223,138)",
+  "fairness": "rgb(252,154,153)",
+  "healthcare": "rgb(227,25,27)",
+  "defense": "rgb(30,120,180)",
+*/
+//colorrange = ["rgb(50,160,44)", "rgb(255,127,0)", "rgb(178,223,138)", "rgb(252,154,153)", "rgb(227,25,27)", "rgb(30,120,180)"];
+colorrange = ["#045A8D", "#2B8CBE", "#74A9CF", "#A6BDDB", "#D0D1E6", "#F1EEF6"];
 
 var format = d3.time.format("%m/%d/%y");
 
@@ -51,7 +50,7 @@ var stack = d3.layout.stack()
     .y(function(d) { return d.value; });
 
 var nest = d3.nest()
-    .key(function(d) { return d.key; });
+    .key(function(d) { return d.state; });
 
 var area = d3.svg.area()
     .interpolate("cardinal")
